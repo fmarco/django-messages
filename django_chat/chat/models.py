@@ -3,14 +3,16 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.encoding import python_2_unicode_compatible
 
 from channels import Group
 
+from .base_message import AbstractBaseMessage
 
-class Message(models.Model):
-    room = models.CharField(max_length=20)
+
+@python_2_unicode_compatible
+class Message(AbstractBaseMessage):
     message = models.TextField()
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     def send_notification(self):
         Group(self.room).send(
