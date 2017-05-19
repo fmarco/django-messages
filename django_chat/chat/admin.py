@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
+from .utils import get_message_model
 
-from .models import Message
+Message = get_message_model()
 
 
 @admin.register(Message)

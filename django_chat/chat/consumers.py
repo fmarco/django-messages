@@ -3,15 +3,21 @@ from channels import Group
 from channels.sessions import channel_session
 from channels.auth import channel_session_user, channel_session_user_from_http
 
-from .models import Message
+from .utils import get_message_model
+from .app_settings import app_settings
+
+Message = get_message_model()
+
+ACCEPTED = {"accept": True}
+CLOSED = {"close": True}
 
 
 @channel_session_user_from_http
 def connect(message):
-    if not message.user.is_authenticated():
-        message.reply_channel.send({"close": True})
+    if app_settings.CHECK_AUTH and not message.user.is_authenticated():
+        message.reply_channel.send(CLOSED)
     else:
-        message.reply_channel.send({"accept": True})
+        message.reply_channel.send(ACCEPTED)
         room = message.content['path'].strip("/")
         message.channel_session['room'] = room
         Group(room).add(message.reply_channel)
@@ -30,8 +36,9 @@ def send_message(message):
             "text": message.content['text']
         }
     )
-    Message.objects.create(
-        room=room,
-        message=message.content['text'],
-        user=message.user
-    )
+    if app_settings.SAVE_ON_DB:
+        Message.objects.create(
+            room=room,
+            message=message.content['text'],
+            user=message.user
+        )
